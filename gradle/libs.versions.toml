@@ -10,6 +10,7 @@ activityCompose = "1.8.2"
 composeBom = "2024.04.00"
 appcompat = "1.6.1"
 retrofit2="2.9.0"
+androidx-compose-runtime = "1.6.5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -29,6 +30,7 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 retrofit2 = { module = "com.squareup.retrofit2:retrofit", name = "retrofit2", version.ref = "retrofit2" }
 gson = { module = "com.squareup.retrofit2:converter-gson", name = "gson", version.ref = "retrofit2" }
+runtime= { module = "androidx.compose.runtime:runtime-livedata", version.ref = "androidx-compose-runtime" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

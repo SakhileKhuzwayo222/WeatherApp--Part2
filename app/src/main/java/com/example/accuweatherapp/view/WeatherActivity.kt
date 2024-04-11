@@ -2,7 +2,6 @@ package com.example.accuweatherapp.view
 
 import android.util.Log
 import androidx.activity.viewModels
-import androidx.lifecycle.Observer
 import com.example.accuweatherapp.R
 import com.example.accuweatherapp.model.WeatherResponse
 import com.example.accuweatherapp.network.WeatherApiClient
@@ -49,7 +48,7 @@ import com.example.accuweatherapp.util.Typography
 import com.example.accuweatherapp.util.darkBlue
 
 class WeatherActivity : ComponentActivity() {
-    private var weatherResponse: WeatherResponse?=null
+
     private val cityName = "Vancouver,CA"
     private val apiKey = "845b9326ad240a51c983493d75bf120b"
 
@@ -68,24 +67,6 @@ class WeatherActivity : ComponentActivity() {
                 ) {
                     // Fetch weather data
                     weatherViewModel.fetchWeather(cityName, apiKey)
-
-                    // Observe weather response LiveData
-                    weatherViewModel.weatherResponseLiveData.observe(this, Observer { result ->
-                        when (result) {
-                            is Result.Success -> {
-                                weatherResponse = result.data
-                                // Handle successful response
-                                // For example, update UI with weather data
-
-                            }
-                            is Result.Error -> {
-                                val exception = result.exception
-                                // Handle error
-                                // For example, show error message
-                                showError(exception.message ?: "Unknown error")
-                            }
-                        }
-                    })
                     WeatherScreen(weatherViewModel)
 
                 }
@@ -94,27 +75,52 @@ class WeatherActivity : ComponentActivity() {
 
     }
 
-    private fun getWeather(){
-
-
-
-    }
-
-    private fun updateUI(weatherResponse: WeatherResponse) {
-        // Update UI with weather data
-
-        Log.d("<",""+weatherResponse.main.temp)
-
-    }
-
-    private fun showError(message: String) {
-        // Show error message
-        Log.e("<<",""+message)
-    }
-
     @Composable
     fun WeatherScreen(weatherViewModel: WeatherViewModel) {
-        weatherViewModel.weatherResponseLiveData
+        //val weatherResponseState by weatherViewModel.weatherResponseLiveData.observeAsState()
+        val weatherResponseState = weatherViewModel.weatherResponseLiveData.value
+        var weatherResponse:WeatherResponse?=null
+
+        // Handle the different states of the weatherResponseState
+        when (val result = weatherResponseState) {
+            is Result.Success -> {
+                weatherResponse = result.data
+                // WeatherResponse data is available, you can access its properties here
+                // For example:
+                val cityName = weatherResponse.name
+                val temperature = weatherResponse.main.temp
+                val description = weatherResponse.weather.firstOrNull()?.description ?: ""
+                // Display UI based on the weather data...
+
+                Log.e("<1",""+cityName+temperature+description)
+            }
+            is Result.Error -> {
+                val errorMessage = result.exception.message ?: "Unknown error"
+                // Handle error state
+                // Display error message or perform error handling...
+                Log.e("<2","errre")
+            }
+            null -> {
+                Log.e("<3","loading")
+                // Weather data is still loading...
+                // You can display a loading indicator or placeholder UI...
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         val context = LocalContext.current
         val background = Brush.verticalGradient(listOf(Color.Blue, darkBlue))
         Box(
@@ -157,10 +163,7 @@ class WeatherActivity : ComponentActivity() {
                         painter = painterResource(R.drawable.align),
                         contentDescription = null,
                         modifier = Modifier
-                            .size(40.dp).clickable {
-                                getWeather()
-
-                        }, alignment = Alignment.Center
+                            .size(40.dp), alignment = Alignment.Center
                     )
                 }
                 Spacer(modifier = Modifier.height(30.dp))
@@ -559,7 +562,7 @@ class WeatherActivity : ComponentActivity() {
     fun GreetingPreview() {
         AccuWeatherAppTheme {
             Surface {
-                WeatherScreen(weatherViewModel)
+               // WeatherScreen(weatherViewModel)
             }
         }
     }
