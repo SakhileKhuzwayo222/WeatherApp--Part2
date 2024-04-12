@@ -1,19 +1,12 @@
 package com.example.accuweatherapp.view
 
-import android.util.Log
-import androidx.activity.viewModels
-import com.example.accuweatherapp.R
-import com.example.accuweatherapp.model.WeatherResponse
-import com.example.accuweatherapp.network.WeatherApiClient
-import com.example.accuweatherapp.repository.Result
-import com.example.accuweatherapp.repository.WeatherRepository
-import com.example.accuweatherapp.viewmodel.WeatherViewModel
-import com.example.accuweatherapp.viewmodel.WeatherViewModelFactory
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,10 +23,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -43,84 +43,98 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.accuweatherapp.R
+import com.example.accuweatherapp.model.WeatherResponse
+import com.example.accuweatherapp.network.WeatherApiClient
+import com.example.accuweatherapp.repository.Result
+import com.example.accuweatherapp.repository.WeatherRepository
 import com.example.accuweatherapp.util.AccuWeatherAppTheme
 import com.example.accuweatherapp.util.Typography
 import com.example.accuweatherapp.util.darkBlue
+import com.example.accuweatherapp.viewmodel.WeatherViewModel
+import com.example.accuweatherapp.viewmodel.WeatherViewModelFactory
+import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
 
 class WeatherActivity : ComponentActivity() {
 
-    private val cityName = "Vancouver,CA"
+    private var cityName: String = "Vancouver,CA"
     private val apiKey = "845b9326ad240a51c983493d75bf120b"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        if (intent != null) {
+            if (intent.getStringExtra("city_name")!=null) {
+                cityName = intent.getStringExtra("city_name").toString()
+            }
+        }
         val weatherViewModel: WeatherViewModel by viewModels {
             WeatherViewModelFactory(WeatherRepository(WeatherApiClient()))
         }
-
         setContent {
             AccuWeatherAppTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    // Fetch weather data
-                    weatherViewModel.fetchWeather(cityName, apiKey)
-                    WeatherScreen(weatherViewModel)
+                    // State to track whether weather data is loading
+                    var isLoading by remember {
+                        mutableStateOf(true)
+                    }
+                    LaunchedEffect(Unit) {
+                        weatherViewModel.fetchWeather(cityName, apiKey)
+                        // Update loading state when data fetching is completed
+                        delay(2000)
+                        isLoading = false
+                    }
+                    // Show progress indicator if data is loading
+                    if (isLoading) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(color = Color.Blue),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Surface(color = Color.Blue) {
+                                CircularProgressIndicator(
+                                    color = Color.Magenta,
+                                    strokeWidth = 10.dp
+                                )
+                            }
+                        }
+                    } else {
+                        WeatherScreen(weatherViewModel)
+                    }
 
                 }
             }
         }
-
     }
+
 
     @Composable
     fun WeatherScreen(weatherViewModel: WeatherViewModel) {
-        //val weatherResponseState by weatherViewModel.weatherResponseLiveData.observeAsState()
-        val weatherResponseState = weatherViewModel.weatherResponseLiveData.value
-        var weatherResponse:WeatherResponse?=null
+        val weatherResponseState by weatherViewModel.weatherResponseLiveData.observeAsState()
+        var weatherResponse: WeatherResponse? = null
 
         // Handle the different states of the weatherResponseState
         when (val result = weatherResponseState) {
             is Result.Success -> {
                 weatherResponse = result.data
-                // WeatherResponse data is available, you can access its properties here
-                // For example:
-                val cityName = weatherResponse.name
-                val temperature = weatherResponse.main.temp
-                val description = weatherResponse.weather.firstOrNull()?.description ?: ""
-                // Display UI based on the weather data...
-
-                Log.e("<1",""+cityName+temperature+description)
             }
+
             is Result.Error -> {
                 val errorMessage = result.exception.message ?: "Unknown error"
-                // Handle error state
-                // Display error message or perform error handling...
-                Log.e("<2","errre")
+                Log.e("<2", errorMessage)
             }
+
             null -> {
-                Log.e("<3","loading")
-                // Weather data is still loading...
-                // You can display a loading indicator or placeholder UI...
+                Log.e("<3", "loading")
             }
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         val context = LocalContext.current
         val background = Brush.verticalGradient(listOf(Color.Blue, darkBlue))
         Box(
@@ -146,7 +160,8 @@ class WeatherActivity : ComponentActivity() {
                         painter = painterResource(R.drawable.plus),
                         contentDescription = null,
                         modifier = Modifier
-                            .size(40.dp).clickable {
+                            .size(40.dp)
+                            .clickable {
                                 context.startActivity(Intent(context, SearchCity::class.java))
                                 (context as Activity)
                             },
@@ -180,7 +195,7 @@ class WeatherActivity : ComponentActivity() {
                             .padding(5.dp)
                     )
                     Text(
-                        text = weatherResponse?.main?.temp.toString(),
+                        text = "${convertKelvinToCelsius(weatherResponse?.main?.temp)} °C",
                         color = Color.White,
                         style = Typography.displayLarge,
                         textAlign = TextAlign.Center, modifier = Modifier
@@ -194,7 +209,7 @@ class WeatherActivity : ComponentActivity() {
                             textAlign = TextAlign.Center, modifier = Modifier
                                 .padding(5.dp)
                         )
-                    }
+                    } ?: "Sunny"
                 }
                 Spacer(modifier = Modifier.height(10.dp))
                 Column(
@@ -210,21 +225,21 @@ class WeatherActivity : ComponentActivity() {
                     ) {
                         Surface(shape = MaterialTheme.shapes.extraLarge, shadowElevation = 0.5.dp) {
                             Text(
-                                text = weatherResponse?.main?.temp_min.toString(),
+                                text = "MIN: ${convertKelvinToCelsius(weatherResponse?.main?.temp_min)} °C",
                                 modifier = Modifier.padding(all = 8.dp),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
                         Surface(shape = MaterialTheme.shapes.extraLarge, shadowElevation = 0.5.dp) {
                             Text(
-                                text = weatherResponse?.main?.temp_max.toString(),
+                                text = "Max: ${convertKelvinToCelsius(weatherResponse?.main?.temp_max)} °C",
                                 modifier = Modifier.padding(all = 8.dp),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
                         Surface(shape = MaterialTheme.shapes.extraLarge, shadowElevation = 0.5.dp) {
                             Text(
-                                text = weatherResponse?.main?.humidity.toString(),
+                                text = "Feels like: ${convertKelvinToCelsius(weatherResponse?.main?.feels_like)} °C",
                                 modifier = Modifier.padding(all = 8.dp),
                                 style = MaterialTheme.typography.bodyLarge
                             )
@@ -251,7 +266,7 @@ class WeatherActivity : ComponentActivity() {
                                 textAlign = TextAlign.Center, modifier = Modifier
                             )
                             Text(
-                                text = "{${weatherResponse?.wind?.speed} mph",
+                                text = "${weatherResponse?.wind?.speed} mph",
                                 color = Color.White,
                                 style = Typography.bodyLarge,
                                 textAlign = TextAlign.Center, modifier = Modifier
@@ -305,13 +320,13 @@ class WeatherActivity : ComponentActivity() {
                     ) {
 
                         Text(
-                            text = "Today",
+                            text = "",
                             color = Color.White,
                             style = Typography.bodyLarge,
                             textAlign = TextAlign.Center, modifier = Modifier
                         )
                         Text(
-                            text = "5-Day Forecast >",
+                            text = "",
                             color = Color.White,
                             style = Typography.bodyLarge,
                             textAlign = TextAlign.Center, modifier = Modifier
@@ -339,16 +354,18 @@ class WeatherActivity : ComponentActivity() {
                             Column(modifier = Modifier.padding(10.dp)) {
                                 Image(
                                     painter = painterResource(id = R.drawable.sunrise),
-                                    contentDescription = "wind"
+                                    contentDescription = "Sunrise"
                                 )
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Text(
-                                    text = "11 PM",
+                                    text = convertUnixTimestampToTime(
+                                        weatherResponse?.sys?.sunrise ?: 0
+                                    ),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Text(
-                                    text = "8'",
+                                    text = "AM",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }
@@ -362,16 +379,18 @@ class WeatherActivity : ComponentActivity() {
                             Column(modifier = Modifier.padding(10.dp)) {
                                 Image(
                                     painter = painterResource(id = R.drawable.sunset),
-                                    contentDescription = "wind"
+                                    contentDescription = "Sunset"
                                 )
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Text(
-                                    text = "11 PM",
+                                    text = convertUnixTimestampToTime(
+                                        weatherResponse?.sys?.sunset ?: 0
+                                    ),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Text(
-                                    text = "8'",
+                                    text = "PM",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }
@@ -389,12 +408,12 @@ class WeatherActivity : ComponentActivity() {
                                 )
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Text(
-                                    text = "11 PM",
+                                    text = "${weatherResponse?.wind?.speed}",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Text(
-                                    text = "8'",
+                                    text = "mph",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }
@@ -408,16 +427,16 @@ class WeatherActivity : ComponentActivity() {
                             Column(modifier = Modifier.padding(10.dp)) {
                                 Image(
                                     painter = painterResource(id = R.drawable.pressure),
-                                    contentDescription = "wind"
+                                    contentDescription = "pressure"
                                 )
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Text(
-                                    text = "11 PM",
+                                    text = "${weatherResponse?.main?.pressure}",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Text(
-                                    text = "8'",
+                                    text = "mbi",
                                     style = MaterialTheme.typography.bodyLarge,
                                 )
                             }
@@ -456,9 +475,6 @@ class WeatherActivity : ComponentActivity() {
                     )
                 }
                 Spacer(modifier = Modifier.height(10.dp))
-
-
-
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.SpaceEvenly,
@@ -557,15 +573,40 @@ class WeatherActivity : ComponentActivity() {
 
     }
 
+    fun convertKelvinToCelsius(kelvin: Double?): Int {
+        kelvin?.let {
+            val celsius = it - 273.15
+            return celsius.toInt()
+        }
+        return 0 // or any default value you prefer
+    }
+
+    fun convertUnixTimestampToTime(timestamp: Long): String {
+        // Convert UNIX timestamp to milliseconds
+        val milliseconds = timestamp * 1000
+        // Create a Date object
+        val date = Date(milliseconds)
+        // Format the date to a human-readable time format
+        val format = SimpleDateFormat("hh:mm", Locale.getDefault())
+        return format.format(date)
+    }
+
+    fun convertPressureToHectoPascals(pressure: Int, currentUnit: String): Double {
+        return when (currentUnit.lowercase()) {
+            "mb" -> pressure.toDouble()  // If the unit is already millibars, no conversion needed
+            "psi" -> pressure * 68.9476 // Convert from pounds per square inch to millibars
+            // Add more cases for other units as needed
+            else -> pressure.toDouble()  // Return unchanged if the unit is unknown
+        }
+    }
+
     @Preview(showBackground = true)
     @Composable
     fun GreetingPreview() {
         AccuWeatherAppTheme {
             Surface {
-               // WeatherScreen(weatherViewModel)
+                WeatherScreen(weatherViewModel = WeatherViewModel(WeatherRepository(WeatherApiClient())))
             }
         }
     }
 }
-
-

@@ -84,7 +84,9 @@ fun SearchBar(viewModel: SearchViewModel) {
             onSearch = {
                 keyboardController?.hide()
                 //call findCities(it)
-                context.startActivity(Intent(context, Home::class.java))
+                val intent = Intent(context, WeatherActivity::class.java)
+                intent.putExtra("city_name", it)
+                context.startActivity(intent)
                 (context as Activity).finish()
             },
             placeholder = {
