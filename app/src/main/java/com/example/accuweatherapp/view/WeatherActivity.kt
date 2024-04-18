@@ -549,15 +549,6 @@ class WeatherActivity : ComponentActivity() {
         val format = SimpleDateFormat("hh:mm", Locale.getDefault())
         return format.format(date)
     }
-
-    fun convertPressureToHectoPascals(pressure: Int, currentUnit: String): Double {
-        return when (currentUnit.lowercase()) {
-            "mb" -> pressure.toDouble()  // If the unit is already millibars, no conversion needed
-            "psi" -> pressure * 68.9476 // Convert from pounds per square inch to millibars
-            // Add more cases for other units as needed
-            else -> pressure.toDouble()  // Return unchanged if the unit is unknown
-        }
-    }
     fun toTitleCase(input: String): String {
         return input.split(" ").joinToString(" ") { word ->
             word.replaceFirstChar { it.uppercase() }
