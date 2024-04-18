@@ -44,12 +44,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.accuweatherapp.R
+import com.example.accuweatherapp.model.ItemData
 import com.example.accuweatherapp.model.WeatherResponse
 import com.example.accuweatherapp.network.WeatherApiClient
 import com.example.accuweatherapp.repository.Result
 import com.example.accuweatherapp.repository.WeatherRepository
 import com.example.accuweatherapp.util.AccuWeatherAppTheme
+import com.example.accuweatherapp.util.MyUtil
 import com.example.accuweatherapp.util.Typography
+import com.example.accuweatherapp.util.WeatherType
 import com.example.accuweatherapp.util.darkBlue
 import com.example.accuweatherapp.viewmodel.WeatherViewModel
 import com.example.accuweatherapp.viewmodel.WeatherViewModelFactory
@@ -61,8 +64,8 @@ import java.util.Locale
 
 class WeatherActivity : ComponentActivity() {
 
-    private var cityName: String = "Vancouver,CA"
-    private val apiKey = "845b9326ad240a51c983493d75bf120b"
+    private var cityName: String = MyUtil.CITY_NAME.convertToString()
+    private val apiKey:String = MyUtil.API_ID.convertToString()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -135,6 +138,7 @@ class WeatherActivity : ComponentActivity() {
                 Log.e("<3", "loading")
             }
         }
+        val Weather_type: String? = weatherResponse?.weather?.get(0)?.main?.uppercase()
         val context = LocalContext.current
         val background = Brush.verticalGradient(listOf(Color.Blue, darkBlue))
         Box(
@@ -203,7 +207,7 @@ class WeatherActivity : ComponentActivity() {
                     )
                     weatherResponse?.weather?.get(0)?.let {
                         Text(
-                            text = it.description,
+                            text = toTitleCase(it.description),
                             color = Color.White,
                             style = Typography.headlineLarge,
                             textAlign = TextAlign.Center, modifier = Modifier
@@ -307,32 +311,6 @@ class WeatherActivity : ComponentActivity() {
 
                 }
 
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.SpaceEvenly,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(all = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-
-                        Text(
-                            text = "",
-                            color = Color.White,
-                            style = Typography.bodyLarge,
-                            textAlign = TextAlign.Center, modifier = Modifier
-                        )
-                        Text(
-                            text = "",
-                            color = Color.White,
-                            style = Typography.bodyLarge,
-                            textAlign = TextAlign.Center, modifier = Modifier
-                        )
-                    }
-                }
 
                 Spacer(modifier = Modifier.height(10.dp))
                 Column(
@@ -468,9 +446,8 @@ class WeatherActivity : ComponentActivity() {
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = "composable provided by the material3 package which takes a composable as the last argument." +
-                                " Since trailing lambdas can be moved outside of the parentheses, you can add any content to the button as a child",
-                        color = Color.White, style = Typography.titleMedium
+                        text = WeatherType.valueOf(Weather_type ?: "CLEAR").advise,
+                        color = Color.White, style = Typography.bodyMedium
 
                     )
                 }
@@ -478,99 +455,81 @@ class WeatherActivity : ComponentActivity() {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.SpaceEvenly,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.Start
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(all = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        Surface(
-                            shape = MaterialTheme.shapes.small,
-                            color = Color.Cyan,
-                            shadowElevation = 0.5.dp,
-                            modifier = Modifier.wrapContentSize()
-                        ) {
-                            Column(modifier = Modifier.padding(10.dp)) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.sunrise),
-                                    contentDescription = "wind"
-                                )
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Text(
-                                    text = "Umbrella",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
+                    Text(
+                        text = "Essentials to carry",
+                        color = Color.White,
+                        style = Typography.bodyLarge,
+                        textAlign = TextAlign.Center, modifier = Modifier
+                    )
 
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    val itemss = getEssentials(WeatherType.valueOf(Weather_type ?: "CLEAR").items)
+
+                    itemss?.let {
+                        val items = listOf(
+                            ItemData(R.drawable.dress, it.getOrNull(0).toString(), Color.Cyan),
+                            ItemData(R.drawable.dress, it.getOrNull(1).toString(), Color.Green),
+                            ItemData(R.drawable.dress, it.getOrNull(2).toString(), Color.Red),
+                            ItemData(R.drawable.dress, it.getOrNull(3).toString(), Color.Magenta)
+                        )
+
+                        // Calculate the number of items that can fit into one row
+                        val itemsPerRow =3
+
+                        // Calculate the number of rows needed
+                        val numRows = (items.size + itemsPerRow - 1) / itemsPerRow
+
+                        // Loop through each row
+                        repeat(numRows) { rowIndex ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(all = 20.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                // Calculate the start and end index for the current row
+                                val start = rowIndex * itemsPerRow
+                                val end = minOf((rowIndex + 1) * itemsPerRow, items.size)
+
+                                // Loop through the items for the current row
+                                for (index in start until end) {
+                                    val item = items[index]
+                                    Surface(
+                                        shape = MaterialTheme.shapes.extraLarge,
+                                        color = item.backgroundColor,
+                                        shadowElevation = 0.5.dp,
+                                        modifier = Modifier.wrapContentSize()
+                                    ) {
+                                        Column(modifier = Modifier.padding(10.dp)) {
+                                            Image(
+                                                painter = painterResource(id = item.imageResource),
+                                                contentDescription = null, // Update content description as needed
+                                                modifier = Modifier.size(40.dp) // Adjust image size as needed
+                                            )
+                                            Spacer(modifier = Modifier.height(10.dp))
+                                            Text(
+                                                text = item.text,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                modifier = Modifier.padding(horizontal = 4.dp) // Adjust padding as needed
+                                            )
+                                        }
+                                    }
+                                }
                             }
-
                         }
-                        Surface(
-                            shape = MaterialTheme.shapes.small,
-                            shadowElevation = 0.5.dp,
-                            color = Color.Green,
-                            modifier = Modifier.wrapContentSize()
-                        ) {
-                            Column(modifier = Modifier.padding(10.dp)) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.sunset),
-                                    contentDescription = "wind"
-                                )
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Text(
-                                    text = "RainCoat",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
-
-                        }
-                        Surface(
-                            shape = MaterialTheme.shapes.small,
-                            shadowElevation = 0.5.dp,
-                            color = Color.Red,
-                            modifier = Modifier.wrapContentSize()
-                        ) {
-                            Column(modifier = Modifier.padding(10.dp)) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.wind),
-                                    contentDescription = "wind"
-                                )
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Text(
-                                    text = "Cap",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
-
-                        }
-                        Surface(
-                            shape = MaterialTheme.shapes.medium,
-                            shadowElevation = 0.5.dp,
-                            color = Color.Magenta,
-                            modifier = Modifier.wrapContentSize()
-                        ) {
-                            Column(modifier = Modifier.padding(10.dp)) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.pressure),
-                                    contentDescription = "wind"
-                                )
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Text(
-                                    text = "Rain Shoes",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
-
-                        }
-
-
                     }
                 }
-
             }
-        }
 
+        }
     }
 
     fun convertKelvinToCelsius(kelvin: Double?): Int {
@@ -590,15 +549,16 @@ class WeatherActivity : ComponentActivity() {
         val format = SimpleDateFormat("hh:mm", Locale.getDefault())
         return format.format(date)
     }
-
-    fun convertPressureToHectoPascals(pressure: Int, currentUnit: String): Double {
-        return when (currentUnit.lowercase()) {
-            "mb" -> pressure.toDouble()  // If the unit is already millibars, no conversion needed
-            "psi" -> pressure * 68.9476 // Convert from pounds per square inch to millibars
-            // Add more cases for other units as needed
-            else -> pressure.toDouble()  // Return unchanged if the unit is unknown
+    fun toTitleCase(input: String): String {
+        return input.split(" ").joinToString(" ") { word ->
+            word.replaceFirstChar { it.uppercase() }
         }
     }
+    fun getEssentials(input: String): List<String> {
+       val list = input.split("\n").toList()
+        return list
+    }
+
 
     @Preview(showBackground = true)
     @Composable

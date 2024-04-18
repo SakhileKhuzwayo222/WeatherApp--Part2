@@ -93,7 +93,7 @@ data class WeatherResponse(
     ):Serializable
 }
 
-  /*
+  /* response
   {
   "coord": {
     "lon": -123.1193,
