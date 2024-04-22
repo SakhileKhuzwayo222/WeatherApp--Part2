@@ -50,22 +50,22 @@ import com.example.accuweatherapp.network.WeatherApiClient
 import com.example.accuweatherapp.repository.Result
 import com.example.accuweatherapp.repository.WeatherRepository
 import com.example.accuweatherapp.util.AccuWeatherAppTheme
-import com.example.accuweatherapp.util.MyUtil
+import com.example.accuweatherapp.util.Constants.API_ID
+import com.example.accuweatherapp.util.Constants.CITY_NAME
+import com.example.accuweatherapp.util.MyUtils.convertKelvinToCelsius
+import com.example.accuweatherapp.util.MyUtils.convertUnixTimestampToTime
 import com.example.accuweatherapp.util.Typography
 import com.example.accuweatherapp.util.WeatherType
 import com.example.accuweatherapp.util.darkBlue
 import com.example.accuweatherapp.viewmodel.WeatherViewModel
 import com.example.accuweatherapp.viewmodel.WeatherViewModelFactory
 import kotlinx.coroutines.delay
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 
 class WeatherActivity : ComponentActivity() {
 
-    private var cityName: String = MyUtil.CITY_NAME.convertToString()
-    private val apiKey:String = MyUtil.API_ID.convertToString()
+    private var cityName: String = CITY_NAME
+    private val apiKey:String = API_ID
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,6 +87,10 @@ class WeatherActivity : ComponentActivity() {
                     var isLoading by remember {
                         mutableStateOf(true)
                     }
+
+                    //To call suspend functions safely from inside a composable,
+                    // use the LaunchedEffect composable. When LaunchedEffect enters the Composition, it launches a coroutine with the block of code passed as a parameter.
+
                     LaunchedEffect(Unit) {
                         weatherViewModel.fetchWeather(cityName, apiKey)
                         // Update loading state when data fetching is completed
@@ -116,7 +120,6 @@ class WeatherActivity : ComponentActivity() {
             }
         }
     }
-
 
     @Composable
     fun WeatherScreen(weatherViewModel: WeatherViewModel) {
@@ -205,6 +208,11 @@ class WeatherActivity : ComponentActivity() {
                         textAlign = TextAlign.Center, modifier = Modifier
                             .padding(5.dp)
                     )
+                    val toTitleCase: (String) -> String = { input ->
+                        input.split(" ").joinToString(" ") { word ->
+                            word.replaceFirstChar { it.uppercase() }
+                        }
+                    }
                     weatherResponse?.weather?.get(0)?.let {
                         Text(
                             text = toTitleCase(it.description),
@@ -215,6 +223,7 @@ class WeatherActivity : ComponentActivity() {
                         )
                     } ?: "Sunny"
                 }
+
                 Spacer(modifier = Modifier.height(10.dp))
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -471,9 +480,14 @@ class WeatherActivity : ComponentActivity() {
                     verticalArrangement = Arrangement.SpaceBetween,
                     horizontalAlignment = Alignment.Start
                 ) {
-                    val itemss = getEssentials(WeatherType.valueOf(Weather_type ?: "CLEAR").items)
 
-                    itemss?.let {
+                    val getEssentials:(String) -> List<String> = { input:String->
+                        input.split("\n").toList()
+                    }
+
+                    val essentialsList = getEssentials(WeatherType.valueOf(Weather_type ?: "CLEAR").items)
+
+                    essentialsList.let {
                         val items = listOf(
                             ItemData(R.drawable.dress, it.getOrNull(0).toString(), Color.Cyan),
                             ItemData(R.drawable.dress, it.getOrNull(1).toString(), Color.Green),
@@ -532,37 +546,9 @@ class WeatherActivity : ComponentActivity() {
         }
     }
 
-    fun convertKelvinToCelsius(kelvin: Double?): Int {
-        kelvin?.let {
-            val celsius = it - 273.15
-            return celsius.toInt()
-        }
-        return 0 // or any default value you prefer
-    }
-
-    fun convertUnixTimestampToTime(timestamp: Long): String {
-        // Convert UNIX timestamp to milliseconds
-        val milliseconds = timestamp * 1000
-        // Create a Date object
-        val date = Date(milliseconds)
-        // Format the date to a human-readable time format
-        val format = SimpleDateFormat("hh:mm", Locale.getDefault())
-        return format.format(date)
-    }
-    fun toTitleCase(input: String): String {
-        return input.split(" ").joinToString(" ") { word ->
-            word.replaceFirstChar { it.uppercase() }
-        }
-    }
-    fun getEssentials(input: String): List<String> {
-       val list = input.split("\n").toList()
-        return list
-    }
-
-
     @Preview(showBackground = true)
     @Composable
-    fun GreetingPreview() {
+    fun WeatherScreenPreview() {
         AccuWeatherAppTheme {
             Surface {
                 WeatherScreen(weatherViewModel = WeatherViewModel(WeatherRepository(WeatherApiClient())))

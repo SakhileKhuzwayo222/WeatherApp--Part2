@@ -1,13 +1,9 @@
 package com.example.accuweatherapp.util
 
-enum class MyUtil(val s: String) {
-    API_ID("845b9326ad240a51c983493d75bf120b"),
-    CITY_NAME("Vancouver,CA");
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
-    fun convertToString(): String {
-        return s
-  }
-}
 enum class WeatherType(val advise: String,val items:String="Sunscreen\nSunglasses\nWaterBottle\nHat") {
     CLEAR("You can enjoy CLEAR weather. Wear smart dress, sunglasses, and sunscreen, and get ready for some delightful outdoor activities under the bright sun. Perfect for picnics, hikes, or a leisurely day at the beach.", "Sunscreen\nSunglasses\nWaterBottle\nHat"),
     THUNDERSTORM("You can enjoy THUNDERSTORM weather. It's best to stay indoors and be safe. Cozy up with a good book or movie while listening to the soothing sound of raindrops. A great opportunity for some indoor relaxation.", "Umbrella\nFlashlight\nBattery-powered radio\nEmergency kit"),
@@ -25,5 +21,26 @@ enum class WeatherType(val advise: String,val items:String="Sunscreen\nSunglasse
     SNOW("You can enjoy SNOWY weather. Get ready for a snowball fight! Snowy days bring joy and excitement, especially for children eager to build snowmen and engage in friendly snowball fights. Bundle up in warm clothing and embrace the winter wonderland.", "Winter coat\nBoots\nGloves\nScarf"),
     SNOW_LIGHT_SNOW("You can enjoy LIGHT SNOW weather. Perfect for building a snowman. Light snowfall transforms the landscape into a magical winter scene, ideal for building snowmen, creating snow angels, or simply admiring the serene beauty of nature blanketed in snow.", "Winter coat\nBoots\nGloves\nScarf"),
     MIST("You can enjoy MISTY weather. It creates a mystical atmosphere. Misty weather lends an enchanting ambiance to the surroundings, evoking a sense of mystery and tranquility. Take a leisurely walk in the misty air and immerse yourself in the serene beauty of the mist-covered landscape.", "Umbrella\nJacket\nComfortable shoes"),
+}
+ object MyUtils{
+    fun convertKelvinToCelsius(kelvin: Double?): Int {
+        kelvin?.let {
+            val celsius = it - 273.15
+            return celsius.toInt()
+        }
+        return 0
+    }
+
+    fun convertUnixTimestampToTime(timestamp: Long): String {
+        val milliseconds = timestamp * 1000
+        val date = Date(milliseconds)
+        val format = SimpleDateFormat("hh:mm", Locale.getDefault())
+        return format.format(date)
+    }
+
+}
+object Constants {
+    const val API_ID = "845b9326ad240a51c983493d75bf120b"
+    const val CITY_NAME = "Vancouver,CA"
 }
 
