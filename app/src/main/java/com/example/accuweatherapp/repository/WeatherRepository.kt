@@ -6,6 +6,7 @@ import com.example.accuweatherapp.model.WeatherResponse
 import com.example.accuweatherapp.network.WeatherApiClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import retrofit2.HttpException
 
 class WeatherRepository(private val weatherApiClient: WeatherApiClient) {
 
@@ -29,8 +30,7 @@ class WeatherRepository(private val weatherApiClient: WeatherApiClient) {
                 }
             } else {
                 val errorBody = response.errorBody()?.string() ?: "Unknown Error"
-                val errorMessage = response.message() ?: errorBody
-                // responseLiveData.value = Result.Error(HttpException(response.code(), errorMessage))
+                responseLiveData.value = Result.Error(HttpException(response))
             }
         } catch (e: Exception) {
             responseLiveData.value = Result.Error(e)
