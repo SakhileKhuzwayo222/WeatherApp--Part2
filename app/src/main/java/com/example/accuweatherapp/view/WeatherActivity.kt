@@ -175,7 +175,7 @@ class WeatherActivity : ComponentActivity() {
                         alignment = Alignment.Center
                     )
                     Text(
-                        text = "Mausam",
+                        text = "AccuWeather",
                         color = Color.White,
                         style = Typography.titleLarge,
                         textAlign = TextAlign.End, modifier = Modifier

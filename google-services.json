@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "80002304993",
+    "project_id": "accuweatherapp-17b09",
+    "storage_bucket": "accuweatherapp-17b09.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:80002304993:android:522e6440d8fba0723d20a0",
+        "android_client_info": {
+          "package_name": "com.example.accuweatherapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQZgUgXbditgSNwuNxUfCjUS60lGV3VlU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
