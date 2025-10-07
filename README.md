@@ -14,7 +14,7 @@ A modern Android weather application built with Jetpack Compose and Kotlin that 
 
 ## 📱 Screenshots
 
-*[Add screenshots of your app here]*
+*[screenshots to be added here]*
 
 ## 🏗️ Architecture
 
